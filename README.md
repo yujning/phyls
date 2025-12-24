@@ -21,3 +21,22 @@ cmake ..
 make
 ./bin/phyLS
 ```
+
+## Citing this Work
+
+If you use this software in any published work, we would appreciate a citation!
+Please use the following references:
+
+1. Paper describing this work has been received in Frontiers of Computer Science（FCS） special column “Code & Data”.
+```
+@article{hongyang2025phyls,
+  title={PhyLS: An AI-driven Physically Aware Synthesis},
+  author={ Hongyang PAN, Cunqing LAN, Zhiang WANG, Keren ZHU},
+  journal={Frontiers of Computer Science},
+  pages={1105--1110},
+  year={2025},
+  doi={10.1007/s11704-025-51861-4}
+}
+```
+
+If you like the tools, please give us a star on our GitHub repos!
