@@ -126,7 +126,8 @@ class lutmap_command : public command {
         std::cerr << "Error: Empty k-LUT network\n";
       else {
         auto klut = store<klut_network>().current();
-        mapping_view mapped_klut{klut};
+        //mapping_view mapped_klut{klut};
+          mapping_view<klut_network, true> mapped_klut{klut};
         phyLS::lut_map_params ps;
         if (is_set("area")) ps.area_oriented_mapping = true;
         if (is_set("relax_required")) ps.relax_required = relax_required;
@@ -136,8 +137,20 @@ class lutmap_command : public command {
         if (is_set("edge")) ps.edge_optimization = false;
         if (is_set("dominated_cuts")) ps.remove_dominated_cuts = false;
         cout << "Mapped kLUT into " << cut_size << "-LUT : ";
-        phyLS::lut_map(mapped_klut, ps);
-        mapped_klut.clear_mapping();
+        //phyLS::lut_map(mapped_klut, ps);
+        //mapped_klut.clear_mapping();
+        phyLS::lut_map<decltype(mapped_klut), true>(mapped_klut, ps);
+        if (is_set("output")) {
+          const auto klut_result = collapse_mapped_network<klut_network>(mapped_klut);
+          if (klut_result) {
+            mockturtle::write_bench(*klut_result, filename);
+          } else {
+            std::cerr << "Error: Failed to collapse mapped kLUT network\n";
+          }
+          mapped_klut.clear_mapping();
+        } else {
+          mapped_klut.clear_mapping();
+        }
       }
     } else {
       if (store<aig_network>().size() == 0u)
