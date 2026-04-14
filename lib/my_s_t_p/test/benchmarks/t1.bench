@@ -1,0 +1,10 @@
+INPUT(n1)
+INPUT(n2)
+OUTPUT(n8)
+
+n3 = LUT 0x1(n1)
+n4 = LUT 0x1(n2)
+n5 = LUT 0x8(n3, n4)
+n6 = LUT 0xe(n1, n2)
+n7 = LUT 0x1(n5)
+n8 = LUT 0x6(n6, n7) 
