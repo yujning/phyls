@@ -438,8 +438,8 @@ ALICE_CONVERT(xmg_network, element, aig_network){
   exact_aig_resynthesis<aig_network> exact_resyn(false, ps2);
   node_resynthesis_stats nrst;
   dsd_resynthesis<aig_network, decltype(exact_resyn)> resyn(exact_resyn);
-  //DSD decomposition may not be able to decompose the whole truth table, \
-  a different fall-back resynthesis function must be passed to this function
+  //DSD decomposition may not be able to decompose the whole truth table, 
+  //a different fall-back resynthesis function must be passed to this function
   const auto aig = node_resynthesis<aig_network>(klut, resyn, {}, &nrst);
 
   return aig;

@@ -17,8 +17,51 @@
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/traits.hpp>
 #include <mockturtle/views/mapping_view.hpp>
-
+#include <mockturtle/networks/klut.hpp>
 #include "../core/lut_mapper.hpp"
+
+#include <optional>
+#include <unordered_map>
+#include <numeric>
+#include <tuple>
+#include <map>
+
+#include <mockturtle/views/topo_view.hpp>
+struct DSDNode {
+  int id;
+  std::string func;
+  std::vector<int> child;
+  int var_id = -1;
+};
+#include "../../lib/my_s_t_p/src/include/algorithms/node_global.hpp"
+
+inline int new_node(const std::string& func, const std::vector<int>& child) {
+  auto key = std::make_tuple(func, child);
+  if (NODE_HASH.count(key)) return NODE_HASH[key];
+  int id = NODE_ID++;
+  NODE_LIST.push_back({id, func, child, -1});
+  NODE_HASH[key] = id;
+  return id;
+}
+
+inline int new_in_node(int var_id) {
+  if (INPUT_NODE_CACHE.count(var_id)) return INPUT_NODE_CACHE[var_id];
+  int id = NODE_ID++;
+  NODE_LIST.push_back({id, "in", {}, var_id});
+  INPUT_NODE_CACHE[var_id] = id;
+  return id;
+}
+
+inline std::vector<int> make_children_from_order(const TT& t) {
+  std::vector<int> ch;
+  ch.reserve(t.order.size());
+  for (auto it = t.order.rbegin(); it != t.order.rend(); ++it) {
+    ch.push_back(new_in_node(*it));
+  }
+  return ch;
+}
+#include "../../lib/my_s_t_p/src/include/algorithms/strong_dsd.hpp"
+
 
 using namespace std;
 using namespace mockturtle;
@@ -50,9 +93,167 @@ class lutmap_command : public command {
              "Remove the cuts that are contained in others [default = true]");
     add_option("--output, -o", filename, "the bench filename");
     add_flag("--verbose, -v", "print the information");
+      add_flag("--stp", "decompose mapped kLUT with strong_dsd+else_dec and remap");
   }
 
  protected:
+ static kitty::dynamic_truth_table tt_from_binary(std::string const& bits) {
+    uint32_t num_vars = 0u;
+    while ((1u << num_vars) < bits.size()) {
+      ++num_vars;
+    }
+    kitty::dynamic_truth_table tt(num_vars);
+    for (uint32_t i = 0u; i < bits.size(); ++i) {
+      if (bits[i] == '1') {
+        kitty::set_bit(tt, i);
+      }
+    }
+    return tt;
+  }
+
+  static std::string tt_to_binary01(kitty::dynamic_truth_table const& tt) {
+    std::string bits;
+    bits.reserve(1u << tt.num_vars());
+    for (uint32_t i = 0u; i < (1u << tt.num_vars()); ++i) {
+      bits.push_back(kitty::get_bit(tt, i) ? '1' : '0');
+    }
+    return bits;
+  }
+
+static std::optional<klut_network> stp_decompose_klut_network(
+    klut_network const& ntk)
+{
+  klut_network decomposed;
+  topo_view topo{ntk};
+  std::unordered_map<uint32_t, klut_network::signal> old2new;
+
+  old2new[topo.node_to_index(topo.get_constant(false))] =
+      decomposed.get_constant(false);
+  if (topo.get_constant(false) != topo.get_constant(true)) {
+    old2new[topo.node_to_index(topo.get_constant(true))] =
+        decomposed.get_constant(true);
+  }
+
+  topo.foreach_pi([&](auto const& n) {
+    old2new[topo.node_to_index(n)] = decomposed.create_pi();
+  });
+
+  topo.foreach_gate([&](auto const& n) {
+    std::vector<klut_network::signal> fanins;
+    topo.foreach_fanin(n, [&](auto const& f) {
+      auto idx = topo.node_to_index(topo.get_node(f));
+      auto it = old2new.find(idx);
+      if (it == old2new.end()) {
+        throw std::runtime_error("stp_decompose_klut_network: missing mapped fanin");
+      }
+      auto sig = it->second;
+      fanins.push_back(topo.is_complemented(f) ? !sig : sig);
+    });
+
+    auto const node_tt = topo.node_function(n);
+    const uint32_t fanin_size = static_cast<uint32_t>(fanins.size());
+
+    // 小节点不做 STP，直接保留
+    if (fanin_size <= 2u) {
+      old2new[topo.node_to_index(n)] = decomposed.create_node(fanins, node_tt);
+      return;
+    }
+
+    try {
+      RESET_NODE_GLOBAL();
+      ENABLE_ELSE_DEC = true;
+      STRONG_DSD_DEBUG_PRINT = false;
+
+      std::vector<int> order(fanin_size);
+      std::iota(order.begin(), order.end(), 1);
+
+      const auto root_id =
+          build_strong_dsd_nodes(tt_to_binary01(node_tt), order);
+
+      if (root_id <= 0) {
+        old2new[topo.node_to_index(n)] =
+            decomposed.create_node(fanins, node_tt);
+        return;
+      }
+
+      // 建一个 id -> DSDNode* 的索引表，方便递归查找
+      std::unordered_map<int, const DSDNode*> id2node;
+      id2node.reserve(NODE_LIST.size());
+      for (auto const& dsd_node : NODE_LIST) {
+        id2node.emplace(dsd_node.id, &dsd_node);
+      }
+
+      // 递归缓存：DSD node id -> decomposed signal
+      std::unordered_map<int, klut_network::signal> memo;
+      memo.reserve(NODE_LIST.size());
+
+      std::function<klut_network::signal(int)> build_signal =
+          [&](int node_id) -> klut_network::signal {
+        auto it_memo = memo.find(node_id);
+        if (it_memo != memo.end()) {
+          return it_memo->second;
+        }
+
+        auto it_node = id2node.find(node_id);
+        if (it_node == id2node.end()) {
+          throw std::runtime_error("stp_decompose_klut_network: unknown DSD node id");
+        }
+
+        const auto& dsd_node = *(it_node->second);
+
+        // 输入节点：映射回当前 LUT 的 fanins
+        if (dsd_node.func == "in") {
+          if (dsd_node.var_id <= 0 ||
+              dsd_node.var_id > static_cast<int>(fanins.size())) {
+            throw std::runtime_error("stp_decompose_klut_network: input var_id out of range");
+          }
+          auto sig = fanins[static_cast<uint32_t>(dsd_node.var_id - 1)];
+          memo[node_id] = sig;
+          return sig;
+        }
+
+        // 常量
+        if (dsd_node.func == "0" || dsd_node.func == "1") {
+          auto sig = decomposed.get_constant(dsd_node.func == "1");
+          memo[node_id] = sig;
+          return sig;
+        }
+
+        // 普通内部节点：先递归构建 children，再 create_node
+        std::vector<klut_network::signal> children;
+        children.reserve(dsd_node.child.size());
+        for (auto child_id : dsd_node.child) {
+          children.push_back(build_signal(child_id));
+        }
+
+        auto sig =
+            decomposed.create_node(children, tt_from_binary(dsd_node.func));
+        memo[node_id] = sig;
+        return sig;
+      };
+
+      auto root_sig = build_signal(root_id);
+      old2new[topo.node_to_index(n)] = root_sig;
+    } catch (std::exception const& e) {
+      std::cerr << "[warning] --stp node decomposition failed: "
+                << e.what()
+                << ", fallback to original node\n";
+      old2new[topo.node_to_index(n)] = decomposed.create_node(fanins, node_tt);
+    }
+  });
+
+  topo.foreach_po([&](auto const& f) {
+    auto idx = topo.node_to_index(topo.get_node(f));
+    auto it = old2new.find(idx);
+    if (it == old2new.end()) {
+      throw std::runtime_error("stp_decompose_klut_network: missing mapped PO driver");
+    }
+    auto sig = it->second;
+    decomposed.create_po(topo.is_complemented(f) ? !sig : sig);
+  });
+
+  return decomposed;
+}
   struct lut_custom_cost {
     std::pair<uint32_t, uint32_t> operator()(uint32_t num_leaves) const {
       if (num_leaves < 2u) return {0u, 0u};
@@ -137,7 +338,30 @@ class lutmap_command : public command {
         if (is_set("dominated_cuts")) ps.remove_dominated_cuts = false;
         cout << "Mapped kLUT into " << cut_size << "-LUT : ";
         phyLS::lut_map(mapped_klut, ps);
-        mapped_klut.clear_mapping();
+        //mapped_klut.clear_mapping();
+        if (is_set("stp")) {
+          auto stp_klut = stp_decompose_klut_network(klut);
+          if (!stp_klut) {
+            std::cerr << "[warning] --stp decomposition failed, keep first mapping\n";
+            if (is_set("output")) {
+              write_bench(mapped_klut, filename);
+            } else {
+              mapped_klut.clear_mapping();
+            }
+          } else {
+            mapping_view mapped_stp{*stp_klut};
+            cout << "Re-mapped STP decomposed kLUT into " << cut_size
+                << "-LUT : ";
+            phyLS::lut_map(mapped_stp, ps);
+            if (is_set("output")) {
+              write_bench(mapped_stp, filename);
+            } else {
+              mapped_stp.clear_mapping();
+            }
+          }
+        } else {
+          mapped_klut.clear_mapping();
+        }
       }
     } else {
       if (store<aig_network>().size() == 0u)

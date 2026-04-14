@@ -87,6 +87,8 @@ inline int strong_exact_refine_2lut(
     const std::vector<int>* local_to_global,
     const std::unordered_map<int,int>* placeholder_nodes )
 {
+  std::cerr << "\n=== HIT MY NEW strong_exact_refine_2lut ===\n";
+std::cerr.flush();
   const int n = (int)order.size();
 
   std::string indent((size_t)depth * 2, ' ');
@@ -140,7 +142,16 @@ inline int strong_exact_refine_2lut(
       }
       else
       {
-        auto cid = node_map.at( f_node );
+        //auto cid = node_map.at( f_node );
+        auto it = node_map.find(f_node);
+        if (it == node_map.end()) {
+          std::cerr << "[ERROR] missing fanin node in node_map\n";
+          std::cerr << "  gate fanin_size = " << klut.fanin_size(n_gate) << "\n";
+          std::cerr << "  is_constant(f_node) = " << klut.is_constant(f_node) << "\n";
+          std::cerr << "  node_map size = " << node_map.size() << "\n";
+          throw std::runtime_error("strong_exact_refine_2lut: missing fanin node_map entry");
+        }
+        auto cid = it->second;
         if ( klut.is_complemented( f_handle ) )
           cid = new_node( "01", { cid } );
         childs.push_back( cid );
@@ -167,7 +178,15 @@ inline int strong_exact_refine_2lut(
     return new_node( val ? "1" : "0", {} );
   }
 
-  auto root_id = node_map.at( po_node );
+  //auto root_id = node_map.at( po_node );
+  auto it_root = node_map.find(po_node);
+  if (it_root == node_map.end()) {
+    std::cerr << "[ERROR] missing po_node in node_map\n";
+    std::cerr << "  klut.num_gates() = " << klut.num_gates() << "\n";
+    std::cerr << "  po complemented = " << klut.is_complemented(po_sig) << "\n";
+    throw std::runtime_error("strong_exact_refine_2lut: missing root node_map entry");
+  }
+  auto root_id = it_root->second;
   if ( klut.is_complemented( po_sig ) )
     root_id = new_node( "01", { root_id } );
 
