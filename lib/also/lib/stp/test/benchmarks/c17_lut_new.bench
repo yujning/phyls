@@ -1,0 +1,8 @@
+# Benchmark "/home/zrb/stp/benchmarks/c17_lut" written by ABC on Tue Apr 23 16:57:14 2024
+INPUT(n1)
+INPUT(n2)
+INPUT(n3)
+INPUT(n4)
+INPUT(n5)
+OUTPUT(n12)
+n12         = LUT 0xf313f333 ( n1, n2, n3, n4, n5 )

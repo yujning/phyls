@@ -1,0 +1,147 @@
+[33me39681f[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m 优化了一点factor_once_with_reorder_01函数,速度稍微快了一点，没啥区别
+[33m4ff764b[m 将详细信息输出去掉
+[33mdf5a9d9[m 完成，详细输出
+[33m7705985[m 对于没有无关项变量的已经映射正确，但是有无关项的还没有映射正确，同时01（）又出现了
+[33m2be0eb2[m 编号有部分有问题，非门已经合并了
+[33md2e77b6[m 修改完变量顺序，可以等价输出了，只是非门还没有合并
+[33m2f6772e[m TT,变量顺序和ABC不一致
+[33m4b12e1e[m 将2改为0
+[33me1798b5[m Convert kitty from submodule to real directory
+[33m2a6a105[m 解决了递归问题，但是现在速度慢
+[33mf5170c1[m 解决了递归问题，但是现在速度慢
+[33mb83c60c[m a888可以递归，但是C9CC3633FFFFFFFFFFFFffffffffffff这个就有问题
+[33mf435fc4[m 递归，还没有编号
+[33m976ba66[m add project
+[33ma26dcfa[m 所有重排后结果
+[33m8eb896f[m Initial commit
+[33ma6de9cb[m Merge pull request #6 from nbulsi/p5
+[33md47da98[m remove warning of typedef
+[33m7a3fc10[m circuit partitioning and warning deletion
+[33m978da2e[m !29 refactor the system Merge pull request !29 from wyz/master
+[33m2a5e9a0[m refactor the system
+[33meab7b2e[m Merge pull request #4 from Max-astro/master
+[33mabda659[m Add 'STP_ENABLE_CUDA' flag in the CMakeLists.txt to control the CUDA feature
+[33m84978a7[m !27 run larger scare circuit Merge pull request !27 from wyz/master
+[33ma65aff1[m run larger scare circuit
+[33m9f44cb2[m add CUDA Usage Instruction
+[33m1193740[m use cuda
+[33md9e04e8[m !23 more stp expressions normalization methods Merge pull request !23 from zfchu/normal
+[33m090f4a0[m more benchmarks
+[33m1f905a6[m !22 benchmark Merge pull request !22 from Kai/master
+[33mb867f3d[m variables order
+[33mb024938[m expr to chain
+[33m8a40cb7[m identity matrix processing
+[33m1848f8d[m normal string
+[33m7b606fe[m string method
+[33m5b516ab[m string method
+[33mea78d89[m 重命名 benchmarks/newill 为 benchmarks/newill.bench
+[33m654d357[m benchmark
+[33m3c8bb2c[m 删除文件 benchmarks/benchmark3/.keep
+[33m0a36a29[m benchmark
+[33ma315014[m benchmark
+[33m4e5386d[m 删除文件 benchmarks/benchmark4/.keep
+[33m2db1071[m benchmark
+[33mefafdbc[m benchmark
+[33mb4a7229[m 重命名 benchmarks/benchmark6 为 benchmarks/benchmark3
+[33m1461b3e[m 重命名 benchmarks/benchmark3 为 benchmarks/benchmark5
+[33m592a685[m 重命名 benchmarks/benchmark5 为 benchmarks/benchmark6
+[33mc53ae2c[m 删除文件 benchmarks/benchmark3/.keep
+[33m41f516b[m benchmark
+[33ma77a4e8[m 删除文件 benchmarks/benchmark2/.keep
+[33m4139900[m 新建 benchmark5
+[33m28024c0[m 新建 benchmark4
+[33mc90caf9[m 新建 benchmark3
+[33md236fb1[m benchmark
+[33m4234fdc[m benchmark
+[33meece4e1[m 新建 benchmark2
+[33m1fac9d3[m 删除文件 benchmarks/benchmark2/.keep
+[33maaffbac[m 新建 benchmark2
+[33mdf96f8d[m add benchmarks
+[33m8632ded[m add benchmarks/newtag5.bench.
+[33m9ec113d[m add benchmarks/newtag4.bench.
+[33m564aaa3[m update benchmarks/newtag3.bench.
+[33mce9f994[m add benchmarks/newtag3.bench.
+[33m14a857b[m add benchmarks/cma152a.bench.
+[33mdefa466[m add benchmarks/newill.
+[33md39660a[m add benchmarks/newtag.bench.
+[33mb6a64c7[m !21 SparseMatrix Merge pull request !21 from Kai/normal
+[33mb4f3038[m update include/stp/stp_eigen.hpp. 稀疏乘法
+[33mf630d0e[m a iterative way to normalize the chain
+[33maee58be[m framework
+[33m3a5d4bb[m !18 many formats issue Merge pull request !18 from zfchu/compute
+[33meb23c85[m clang-format
+[33m85725c4[m test
+[33m7e01c80[m !17 Docs Merge pull request !17 from zfchu/compute
+[33m264c1e5[m docs
+[33m6e0f1d8[m matrix chain multiplication
+[33m24a6ac0[m stp computation revise
+[33m73aac51[m stp computation doc
+[33m9d24219[m docs
+[33md1a9fc7[m !16 stp_simulator Merge pull request !16 from zfchu/p15
+[33m714d766[m post-fix
+[33m86a4700[m add simulator and dag
+[33m71c74a3[m !14 Multi-thread based on dynamic programming Merge pull request !14 from zfchu/p13
+[33mbbf06f7[m post fix
+[33m28895a6[m Parallel + dynamic programming
+[33m6749b75[m xxx
+[33m28eb33f[m !12 eigen support for kronecker product Merge pull request !12 from zfchu/eigen
+[33m4acba75[m format
+[33m5e77224[m eigen kronecker product
+[33mb9bfa4e[m !11 Format Merge pull request !11 from zfchu/eigen
+[33m919399b[m format
+[33me9b2470[m !10 debug Merge pull request !10 from 张瑞兵/master
+[33mefde99e[m update
+[33m8283b6a[m delete duplicate file
+[33mbaaacff[m merge more stp calculation method
+[33mb1b3a38[m theta
+[33m2ffab06[m stp
+[33mae0b4fa[m stp eigen amend
+[33m1c9c5d4[m variable type in function prototype
+[33m666a6a8[m about doc
+[33m3c68522[m !7 multi-thread STP calculation Merge pull request !7 from zfchu/thread
+[33m04b8c2f[m maximum number of threads
+[33mdfb6750[m multi-thread
+[33m5a85fbe[m update
+[33m77787b3[m !4 Add more operators and test cases Merge pull request !4 from zfchu/test
+[33m62d28ff[m test
+[33m1987074[m more variables
+[33m57faf22[m mixed expressions
+[33mb12894a[m !3 logic expr to noramlized stp form Merge pull request !3 from zfchu/expr
+[33m11afd85[m more variables
+[33m1946401[m Me
+[33md1b27d1[m test
+[33m3db5813[m format
+[33m0731c9f[m alpha version
+[33m874221d[m power reducing
+[33m1e2d6bb[m expr normalize
+[33m38e2564[m expr normalize
+[33md321148[m logic expr
+[33m04caaa0[m Merge branch 'master' of https://gitee.com/zfchu/stp
+[33mc442bcd[m readthedocs deploy
+[33m592a6d6[m !2 Boolean expression to truth table via STP Merge pull request !2 from zfchu/p1
+[33m531337e[m test cases
+[33m2116a15[m print
+[33m494c90e[m format
+[33m7b926ad[m expression
+[33mc408533[m string parser with more details
+[33mf3f7303[m update examples/test.cpp.
+[33m6acf942[m update include/stp/stp_eigen.hpp. 增加功能
+[33m1d3c07d[m string parser
+[33mf0b2d91[m swap matrix
+[33m67bd6a5[m stp_eigen
+[33me8b44a8[m Merge branch 'master' of https://gitee.com/zfchu/stp
+[33mc9c18c2[m stp_eigen
+[33md7a9a4b[m stp
+[33m80c9f5d[m README
+[33m7883b7c[m install eigen if not found
+[33m54e7b6f[m remove eigen from lib, install it if not found.
+[33mdb37394[m README
+[33m29caa5f[m add eigen
+[33ma71137f[m add example
+[33ma8a3215[m add test and experiments directories
+[33m33ff871[m add 3rd party lib fmt
+[33ma3189d0[m remove templates
+[33mccbbdd7[m Init framework
+[33mcac83e7[m .gitignore
+[33m4964c79[m License
+[33m4c0d29c[m Initial commit
