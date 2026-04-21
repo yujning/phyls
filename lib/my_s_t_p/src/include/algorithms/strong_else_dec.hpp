@@ -87,13 +87,13 @@ inline int strong_exact_refine_2lut(
     const std::vector<int>* local_to_global,
     const std::unordered_map<int,int>* placeholder_nodes )
 {
-  std::cerr << "\n=== HIT MY NEW strong_exact_refine_2lut ===\n";
+  //std::cerr << "\n=== HIT MY NEW strong_exact_refine_2lut ===\n";
 std::cerr.flush();
   const int n = (int)order.size();
 
   std::string indent((size_t)depth * 2, ' ');
-  std::cout << indent << "⚠️ Strong EXACT refine (n=" << n << ")\n";
-  std::cout << indent << "f=" << mf << "\n";
+  //std::cout << indent << "⚠️ Strong EXACT refine (n=" << n << ")\n";
+  //std::cout << indent << "f=" << mf << "\n";
 
   for ( char c : mf )
     if ( c != '0' && c != '1' )
@@ -101,7 +101,7 @@ std::cerr.flush();
 
   kitty::dynamic_truth_table tt( n );
   kitty::create_from_binary_string( tt, mf );
-  std::cout << indent << "[DEBUG] kitty hex = " << kitty::to_hex( tt ) << "\n";
+  //std::cout << indent << "[DEBUG] kitty hex = " << kitty::to_hex( tt ) << "\n";
 
   mockturtle::klut_network klut;
   std::vector<mockturtle::klut_network::signal> pis;
@@ -114,7 +114,7 @@ std::cerr.flush();
   resyn( klut, tt, pis.begin(), pis.end(),
         [&]( auto const& s ) { klut.create_po( s ); } );
 
-  std::cout << indent << "Exact 2-LUT count = " << klut.num_gates() << "\n";
+  //std::cout << indent << "Exact 2-LUT count = " << klut.num_gates() << "\n";
 
   // Map KLUT nodes to your node IDs
   std::unordered_map<mockturtle::klut_network::node, int> node_map;
@@ -226,7 +226,7 @@ inline int strong_else_decompose(
   }
 
   // ---------- n > 4 : Shannon ONE layer ----------
-  std::cout << indent << "⚠️ Strong fallback: Shannon ONE layer (n=" << n << ")\n";
+ // std::cout << indent << "⚠️ Strong fallback: Shannon ONE layer (n=" << n << ")\n";
 
   const size_t half = mf.size() / 2;
   std::string f_pos = mf.substr( 0, half );

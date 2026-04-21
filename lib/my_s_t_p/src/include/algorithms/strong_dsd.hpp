@@ -14,7 +14,7 @@
 // =====================================================
 // Debug switch
 // =====================================================
-inline bool STRONG_DSD_DEBUG_PRINT = true;
+inline bool STRONG_DSD_DEBUG_PRINT = false;
 
 // =====================================================
 // Pretty print: TT + order (must be paired)
@@ -501,7 +501,7 @@ inline int build_strong_dsd_nodes_impl(
     if (!split.found)
     {
         std::string indent((size_t)depth * 2, ' ');
-        std::cout << indent << "❌ Strong DSD: no valid split\n";
+       // std::cout << indent << "❌ Strong DSD: no valid split\n";
 
         // =================================================
         // (3) Strong 失败：fallback
@@ -514,8 +514,8 @@ inline int build_strong_dsd_nodes_impl(
                     order, placeholder_nodes, local_to_global
                 )[0];
 
-            std::cout << indent
-                      << "⚠️ Fallback: Shannon ONE layer (n=" << n << ")\n";
+            //std::cout << indent
+                     // << "⚠️ Fallback: Shannon ONE layer (n=" << n << ")\n";
 
             return strong_else_decompose(
                 mf,
@@ -541,17 +541,17 @@ inline int build_strong_dsd_nodes_impl(
 
     {
         std::string indent((size_t)depth * 2, ' ');
-        std::cout << indent << "✅ L = " << result.L << "\n";
-        std::cout << indent << "Mx = " << result.Mx << "\n";
-        std::cout << indent << "My = " << result.My << "\n";
+       // std::cout << indent << "✅ L = " << result.L << "\n";
+        //std::cout << indent << "Mx = " << result.Mx << "\n";
+        //std::cout << indent << "My = " << result.My << "\n";
 
-        std::cout << indent << "My 使用变量（MSB->LSB）：{ ";
-        for (int v : split.my_vars_msb2lsb) std::cout << v << " ";
-        std::cout << "}\n";
+        //std::cout << indent << "My 使用变量（MSB->LSB）：{ ";
+        //for (int v : split.my_vars_msb2lsb) std::cout << v << " ";
+        //std::cout << "}\n";
 
-        std::cout << indent << "Mx 使用变量（MSB->LSB）：{ ";
-        for (int v : split.mx_vars_msb2lsb) std::cout << v << " ";
-        std::cout << "}\n";
+        //std::cout << indent << "Mx 使用变量（MSB->LSB）：{ ";
+        //for (int v : split.mx_vars_msb2lsb) std::cout << v << " ";
+        //std::cout << "}\n";
     }
 
     // -------- recurse My --------
@@ -711,8 +711,8 @@ inline void strong_refine_all_non_2input_nodes()
         return;
     }
 
-    std::cout << "🔧 Strong DSD: refining " << targets.size()
-              << " non-2input nodes\n";
+   // std::cout << "🔧 Strong DSD: refining " << targets.size()
+            //  << " non-2input nodes\n";
 
     for (int node_id : targets)
     {
@@ -733,7 +733,7 @@ inline bool is_need_post_decompose(const DSDNode& nd)
 
 inline void post_decompose_all_large_nodes_fixpoint()
 {
-    std::cout << "🔧 Post-decompose: start fixpoint refinement\n";
+   // std::cout << "🔧 Post-decompose: start fixpoint refinement\n";
 
     bool changed = true;
     int round = 0;
@@ -743,7 +743,7 @@ inline void post_decompose_all_large_nodes_fixpoint()
         changed = false;
         ++round;
 
-        std::cout << "🔁 Post-decompose round " << round << "\n";
+        //std::cout << "🔁 Post-decompose round " << round << "\n";
 
         // ⚠️ 每一轮都重新扫描整个 NODE_LIST
         for (size_t i = 0; i < NODE_LIST.size(); ++i)
@@ -780,18 +780,18 @@ inline void post_decompose_all_large_nodes_fixpoint()
                 continue;
             // =====================================================
 
-            std::cout << "  🔍 Found >2-input node: id=" << old_id
-                    << " fanin=" << nd.child.size()
-                    << " func=" << nd.func << "\n";
+            //std::cout << "  🔍 Found >2-input node: id=" << old_id
+                  //  << " fanin=" << nd.child.size()
+                  // << " func=" << nd.func << "\n";
 
             int new_id = strong_refine_non_2input_node(old_id);
 
             if (new_id != old_id)
             {
-                std::cout << "  ✂️ Refined node " << old_id
-                        << " -> " << new_id << "\n";
+                //std::cout << "  ✂️ Refined node " << old_id
+                      //  << " -> " << new_id << "\n";
 
-                                strong_replace_node_everywhere(old_id, new_id);
+                strong_replace_node_everywhere(old_id, new_id);
 
                 // =====================================================
                 // 🔥 关键：从 NODE_LIST 中物理删除 old 节点
@@ -814,7 +814,7 @@ inline void post_decompose_all_large_nodes_fixpoint()
         }
     }
 
-    std::cout << "✅ Post-decompose finished: no >2-input nodes left\n";
+    //std::cout << "✅ Post-decompose finished: no >2-input nodes left\n";
 }
 
 inline int build_strong_dsd_nodes(
