@@ -19,6 +19,8 @@
 #include <mockturtle/views/mapping_view.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include "../core/lut_mapper.hpp"
+#include "../core/flow_detail.hpp"
+
 
 #include <optional>
 #include <unordered_map>
@@ -94,6 +96,7 @@ class lutmap_command : public command {
     add_option("--output, -o", filename, "the bench filename");
     add_flag("--verbose, -v", "print the information");
       add_flag("--stp", "decompose mapped kLUT with strong_dsd+else_dec and remap");
+          add_flag("--dec", "decompose mapped kLUT with lut_resyn -l style decomposition and remap");
   }
 
  protected:
@@ -254,6 +257,31 @@ static std::optional<klut_network> stp_decompose_klut_network(
 
   return decomposed;
 }
+
+ struct klut_dec_resynthesis {
+    template <typename LeavesIterator, typename Fn>
+    void operator()(klut_network& ntk,
+                    kitty::dynamic_truth_table const& function,
+                    LeavesIterator begin, LeavesIterator end, Fn&& fn) const {
+      mockturtle::decomposition_flow_params ps;
+      const std::vector<klut_network::signal> leaves(begin, end);
+      const auto f = mockturtle::dsd_detail(ntk, function, leaves, ps);
+      fn(f);
+    }
+  };
+
+  static std::optional<klut_network> dec_decompose_klut_network(
+      klut_network const& ntk) {
+    try {
+      klut_dec_resynthesis resyn;
+      return node_resynthesis<klut_network>(ntk, resyn);
+    } catch (std::exception const& e) {
+      std::cerr << "[warning] --dec node decomposition failed: " << e.what()
+                << ", fallback to original node\n";
+      return std::nullopt;
+    }
+  }
+
   struct lut_custom_cost {
     std::pair<uint32_t, uint32_t> operator()(uint32_t num_leaves) const {
       if (num_leaves < 2u) return {0u, 0u};
@@ -339,6 +367,9 @@ static std::optional<klut_network> stp_decompose_klut_network(
         cout << "Mapped kLUT into " << cut_size << "-LUT : ";
         phyLS::lut_map(mapped_klut, ps);
         //mapped_klut.clear_mapping();
+         if (is_set("stp") && is_set("dec")) {
+          std::cerr << "[warning] both --stp and --dec are set, --stp is used\n";
+        }
         if (is_set("stp")) {
           auto stp_klut = stp_decompose_klut_network(klut);
           if (!stp_klut) {
@@ -357,6 +388,26 @@ static std::optional<klut_network> stp_decompose_klut_network(
               write_bench(mapped_stp, filename);
             } else {
               mapped_stp.clear_mapping();
+            }
+          }
+          } else if (is_set("dec")) {
+          auto dec_klut = dec_decompose_klut_network(klut);
+          if (!dec_klut) {
+            std::cerr << "[warning] --dec decomposition failed, keep first mapping\n";
+            if (is_set("output")) {
+              write_bench(mapped_klut, filename);
+            } else {
+              mapped_klut.clear_mapping();
+            }
+          } else {
+            mapping_view mapped_dec{*dec_klut};
+            cout << "Re-mapped DEC decomposed kLUT into " << cut_size
+                 << "-LUT : ";
+            phyLS::lut_map(mapped_dec, ps);
+            if (is_set("output")) {
+              write_bench(mapped_dec, filename);
+            } else {
+              mapped_dec.clear_mapping();
             }
           }
         } else {

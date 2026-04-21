@@ -49,9 +49,9 @@ if (ENABLE_ABC)
   endif()
 endif()
 
-if(MOCKTURTLE_EXAMPLES)
-  add_subdirectory(examples)
-endif()
+# if(MOCKTURTLE_EXAMPLES)
+#   add_subdirectory(examples)
+# endif()
 
 if(MOCKTURTLE_TEST)
   add_subdirectory(test)
