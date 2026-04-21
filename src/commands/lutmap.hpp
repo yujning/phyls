@@ -28,7 +28,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <map>
-
+#include <mockturtle/algorithms/collapse_mapped.hpp>
 struct DSDNode {
   int id;
   std::string func;
@@ -93,6 +93,8 @@ class lutmap_command : public command {
     add_flag("--dominated_cuts, -d",
              "Remove the cuts that are contained in others [default = true]");
     add_option("--output, -o", filename, "the bench filename");
+        add_option("--bench", bench_filename,
+               "export mapped 6-LUT bench after mapping");
     add_flag("--verbose, -v", "print the information");
    add_flag("--stp", "decompose original kLUT with lut_resyn -d style STP decomposition and remap");
     add_flag("--dec", "decompose original kLUT with lut_resyn -l style decomposition and remap");
@@ -257,6 +259,14 @@ std::function<std::optional<klut_network::signal>(int)> build =
     }
       }
 
+    template <typename MappedNetwork>
+    void write_mapped_klut_bench_if_needed(const MappedNetwork& mapped) const {
+      if (bench_filename.empty()) return;
+      const auto klut = *collapse_mapped_network<klut_network>(mapped);
+      write_bench(klut, bench_filename);
+    }
+
+
 
   struct lut_custom_cost {
     std::pair<uint32_t, uint32_t> operator()(uint32_t num_leaves) const {
@@ -344,6 +354,7 @@ std::function<std::optional<klut_network::signal>(int)> build =
           mapping_view mapped_klut{klut};
           cout << "Mapped kLUT into " << cut_size << "-LUT : ";
           phyLS::lut_map(mapped_klut, ps);
+           write_mapped_klut_bench_if_needed(mapped_klut);
           mapped_klut.clear_mapping();
           return;
         }
@@ -359,7 +370,9 @@ std::function<std::optional<klut_network::signal>(int)> build =
             cout << "Mapped original kLUT into " << cut_size << "-LUT : ";
             phyLS::lut_map(mapped_klut, ps);
             if (is_set("output")) write_bench(mapped_klut, filename);
-            else mapped_klut.clear_mapping();
+           // else mapped_klut.clear_mapping();
+                       write_mapped_klut_bench_if_needed(mapped_klut);
+            mapped_klut.clear_mapping();
           } else {
             mapping_view mapped_stp{*stp_klut};
             cout << "Re-mapped STP decomposed kLUT into " << cut_size
@@ -367,8 +380,8 @@ std::function<std::optional<klut_network::signal>(int)> build =
             phyLS::lut_map(mapped_stp, ps);
             if (is_set("output")) {
               write_bench(mapped_stp, filename);
-            } else {
-              mapped_stp.clear_mapping();
+         write_mapped_klut_bench_if_needed(mapped_stp);
+            mapped_stp.clear_mapping();
             }
           }
        } else if (is_set("dec")) {
@@ -379,7 +392,8 @@ std::function<std::optional<klut_network::signal>(int)> build =
             cout << "Mapped original kLUT into " << cut_size << "-LUT : ";
             phyLS::lut_map(mapped_klut, ps);
             if (is_set("output")) write_bench(mapped_klut, filename);
-            else mapped_klut.clear_mapping();
+            write_mapped_klut_bench_if_needed(mapped_klut);
+            mapped_klut.clear_mapping();
           } else {
             mapping_view mapped_dec{*dec_klut};
             cout << "Re-mapped DEC decomposed kLUT into " << cut_size
@@ -387,8 +401,8 @@ std::function<std::optional<klut_network::signal>(int)> build =
             phyLS::lut_map(mapped_dec, ps);
             if (is_set("output")) {
               write_bench(mapped_dec, filename);
-            } else {
-              mapped_dec.clear_mapping();
+            write_mapped_klut_bench_if_needed(mapped_dec);
+            mapped_dec.clear_mapping();
             }
           }
         }
@@ -415,8 +429,8 @@ std::function<std::optional<klut_network::signal>(int)> build =
           phyLS::lut_map(mapped_aig, ps);
         if (is_set("output")) {
           write_bench(mapped_aig, filename);
-        } else {
-          mapped_aig.clear_mapping();
+        write_mapped_klut_bench_if_needed(mapped_aig);
+        mapped_aig.clear_mapping();
         }
       }
     }
@@ -427,6 +441,7 @@ std::function<std::optional<klut_network::signal>(int)> build =
   uint32_t cut_limit{8u};
   uint32_t relax_required{0u};
   std::string filename = "lut.bench";
+ std::string bench_filename{};
 };
 
 ALICE_ADD_COMMAND(lutmap, "Mapping")
