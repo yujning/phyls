@@ -207,9 +207,24 @@ std::function<std::optional<klut_network::signal>(int)> build =
         if (args.empty()) return std::nullopt;
 
         uint32_t num_vars = 0u;
+
         while ((1u << num_vars) < node.func.size()) {
           ++num_vars;
         }
+
+        if ((1u << num_vars) != node.func.size()) {
+          std::cerr << "[warning] invalid tt length: " << node.func.size()
+                    << ", func = " << node.func << "\n";
+          return std::nullopt;
+        }
+
+        if (num_vars != args.size()) {
+          std::cerr << "[warning] tt/input mismatch: tt vars = " << num_vars
+                    << ", args = " << args.size()
+                    << ", func = " << node.func << "\n";
+          return std::nullopt;
+        }
+
         auto tt_local = kitty::dynamic_truth_table(num_vars);
         kitty::create_from_binary_string(tt_local, node.func);
         auto sig = ntk.create_node(args, tt_local);
@@ -259,12 +274,21 @@ std::function<std::optional<klut_network::signal>(int)> build =
     }
       }
 
-    template <typename MappedNetwork>
-    void write_mapped_klut_bench_if_needed(const MappedNetwork& mapped) const {
-      if (bench_filename.empty()) return;
-      const auto klut = *collapse_mapped_network<klut_network>(mapped);
-      write_bench(klut, bench_filename);
+template <typename MappedNetwork>
+void write_mapped_klut_bench_if_needed(const MappedNetwork& mapped) const {
+  if (bench_filename.empty()) return;
+
+  try {
+    const auto klut_result = collapse_mapped_network<klut_network>(mapped);
+    if (klut_result) {
+      mockturtle::write_bench(*klut_result, bench_filename);
+    } else {
+      std::cerr << "Error: Failed to collapse mapped kLUT network for --bench\n";
     }
+  } catch (std::exception const& e) {
+    std::cerr << "Error: Exception during --bench export: " << e.what() << "\n";
+  }
+}
 
 
 
@@ -351,10 +375,10 @@ std::function<std::optional<klut_network::signal>(int)> build =
         if (is_set("edge")) ps.edge_optimization = false;
         if (is_set("dominated_cuts")) ps.remove_dominated_cuts = false;
         if (!is_set("stp") && !is_set("dec")) {
-          mapping_view mapped_klut{klut};
+          mapping_view<klut_network, true> mapped_klut{klut};
           cout << "Mapped kLUT into " << cut_size << "-LUT : ";
-          phyLS::lut_map(mapped_klut, ps);
-           write_mapped_klut_bench_if_needed(mapped_klut);
+          phyLS::lut_map<decltype(mapped_klut), true>(mapped_klut, ps);
+          write_mapped_klut_bench_if_needed(mapped_klut);
           mapped_klut.clear_mapping();
           return;
         }
@@ -366,7 +390,7 @@ std::function<std::optional<klut_network::signal>(int)> build =
           auto stp_klut = stp_decompose_klut_network(klut);
           if (!stp_klut) {
           std::cerr << "[warning] --stp decomposition failed, map original kLUT\n";
-            mapping_view mapped_klut{klut};
+            mapping_view<klut_network, true> mapped_klut{klut};
             cout << "Mapped original kLUT into " << cut_size << "-LUT : ";
             phyLS::lut_map(mapped_klut, ps);
             if (is_set("output")) write_bench(mapped_klut, filename);
@@ -374,36 +398,38 @@ std::function<std::optional<klut_network::signal>(int)> build =
                        write_mapped_klut_bench_if_needed(mapped_klut);
             mapped_klut.clear_mapping();
           } else {
-            mapping_view mapped_stp{*stp_klut};
-            cout << "Re-mapped STP decomposed kLUT into " << cut_size
-                << "-LUT : ";
-            phyLS::lut_map(mapped_stp, ps);
+            mapping_view<klut_network, true> mapped_stp{*stp_klut};
+            phyLS::lut_map<decltype(mapped_stp), true>(mapped_stp, ps);
+            cout << "Re-mapped STP decomposed kLUT into " << cut_size << "-LUT : ";
+      
+
             if (is_set("output")) {
               write_bench(mapped_stp, filename);
-         write_mapped_klut_bench_if_needed(mapped_stp);
-            mapped_stp.clear_mapping();
             }
+            write_mapped_klut_bench_if_needed(mapped_stp);
+            mapped_stp.clear_mapping();
           }
        } else if (is_set("dec")) {
           auto dec_klut = dec_decompose_klut_network(klut);
           if (!dec_klut) {
             std::cerr << "[warning] --dec decomposition failed, map original kLUT\n";
-            mapping_view mapped_klut{klut};
+            mapping_view<klut_network, true> mapped_klut{klut};
             cout << "Mapped original kLUT into " << cut_size << "-LUT : ";
             phyLS::lut_map(mapped_klut, ps);
             if (is_set("output")) write_bench(mapped_klut, filename);
             write_mapped_klut_bench_if_needed(mapped_klut);
             mapped_klut.clear_mapping();
           } else {
-            mapping_view mapped_dec{*dec_klut};
-            cout << "Re-mapped DEC decomposed kLUT into " << cut_size
-                 << "-LUT : ";
-            phyLS::lut_map(mapped_dec, ps);
-            if (is_set("output")) {
-              write_bench(mapped_dec, filename);
-            write_mapped_klut_bench_if_needed(mapped_dec);
-            mapped_dec.clear_mapping();
-            }
+              mapping_view<klut_network, true> mapped_dec{*dec_klut};
+              phyLS::lut_map<decltype(mapped_dec), true>(mapped_dec, ps);
+              cout << "Re-mapped DEC decomposed kLUT into " << cut_size
+                  << "-LUT : ";
+
+              if (is_set("output")) {
+                write_bench(mapped_dec, filename);
+              }
+              write_mapped_klut_bench_if_needed(mapped_dec);
+              mapped_dec.clear_mapping();
           }
         }
       }
